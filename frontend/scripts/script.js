@@ -116,3 +116,34 @@ async function deletarSapz(id) {
         alert("Erro ao excluir.");
     }
 }
+(async function protegerRota() {
+    const token = localStorage.getItem('Authorization') || localStorage.getItem('token');
+
+    // 1. Se não existir o token salvo, redireciona imediatamente
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // 2. Valida o token com o backend para garantir que não expirou
+    try {
+        const response = await fetch('http://localhost:8080/user', { // Altere para a sua rota protegida
+            method: 'GET',
+            headers: {
+                'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`
+            }
+        });
+
+        // Se o backend retornar 401 (Unauthorized) ou 403 (Forbidden)
+        if (!response.ok) {
+            localStorage.removeItem('Authorization');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    } catch (error) {
+        console.error('Erro na validação do login:', error);
+        localStorage.removeItem('Authorization');
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+})();

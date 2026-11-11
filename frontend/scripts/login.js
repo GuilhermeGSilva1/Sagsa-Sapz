@@ -35,3 +35,20 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         alertDiv.style.display = "block";
     }
 });
+
+// Exemplo no login.js após sucesso na requisição
+const response = await fetch('http://localhost:8080/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+});
+
+if (response.ok) {
+    // Obter o token do cabeçalho de resposta ou do corpo JSON
+    const token = response.headers.get('Authorization'); 
+    
+    if (token) {
+        localStorage.setItem('Authorization', token);
+        window.location.href = 'index.html';
+    }
+}

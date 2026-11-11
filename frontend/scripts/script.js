@@ -1,37 +1,70 @@
 const API_URL = "http://localhost:8080";
 
-document.addEventListener("DOMContentLoaded", () => {
-    verificarAutenticacao();
-    carregarSapzs();
-});
-
-function verificarAutenticacao() {
+// Auxiliar para recuperar o token formatado
+function getAuthHeader() {
     const token = localStorage.getItem("Authorization");
-    const email = localStorage.getItem("user_email");
-
-    if (!token) {
-        window.location.href = "login.html";
-        return;
-    }
-
-    document.getElementById("userDisplay").innerText = `${email}`;
+    if (!token || token === "null" || token === "undefined") return null;
+    return token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 }
 
+// Redireciona para o login limpando dados inválidos
+function redirecionarParaLogin() {
+    localStorage.removeItem("Authorization");
+    localStorage.removeItem("user_email");
+    window.location.href = "login.html";
+}
+
+// Validação de autenticação local
+function verificarAutenticacao() {
+    const authHeader = getAuthHeader();
+    const email = localStorage.getItem("user_email");
+
+    if (!authHeader) {
+        redirecionarParaLogin();
+        return false;
+    }
+
+    const userDisplay = document.getElementById("userDisplay");
+    if (userDisplay && email) {
+        userDisplay.innerText = email;
+    }
+
+    return true;
+}
+
+// Logout manual
 function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
 
+// Inicialização da página
+document.addEventListener("DOMContentLoaded", () => {
+    if (!verificarAutenticacao()) return;
+
+    carregarSapzs();
+
+    const sapzForm = document.getElementById("sapzForm");
+    if (sapzForm) {
+        sapzForm.addEventListener("submit", salvarSapz);
+    }
+});
+
+// Listar SAPZs da API
 async function carregarSapzs() {
-    const token = localStorage.getItem("Authorization");
+    const authHeader = getAuthHeader();
     const tbody = document.getElementById("sapzTableBody");
+    if (!tbody || !authHeader) return;
 
     try {
         const response = await fetch(`${API_URL}/situacoes-aprendizagem`, {
-            headers: { 
-                "Authorization": token.startsWith("Bearer ") ? token : `Bearer ${token}` 
-            }
+            headers: { "Authorization": authHeader }
         });
+
+        if (response.status === 401 || response.status === 403) {
+            redirecionarParaLogin();
+            return;
+        }
 
         if (response.ok) {
             const sapzs = await response.json();
@@ -55,13 +88,16 @@ async function carregarSapzs() {
             });
         }
     } catch (err) {
+        console.error("Erro ao carregar SAPZs:", err);
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
     }
 }
 
-document.getElementById("sapzForm").addEventListener("submit", async (e) => {
+// Salvar SAPZ
+async function salvarSapz(e) {
     e.preventDefault();
-    const token = localStorage.getItem("Authorization");
+    const authHeader = getAuthHeader();
+    if (!authHeader) return redirecionarParaLogin();
 
     const novaSapz = {
         titulo: document.getElementById("titulo").value,
@@ -79,10 +115,15 @@ document.getElementById("sapzForm").addEventListener("submit", async (e) => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": token.startsWith("Bearer ") ? token : `Bearer ${token}`
+                "Authorization": authHeader
             },
             body: JSON.stringify(novaSapz)
         });
+
+        if (response.status === 401 || response.status === 403) {
+            redirecionarParaLogin();
+            return;
+        }
 
         if (response.ok || response.status === 201) {
             alert("SAPZ salva com sucesso!");
@@ -93,57 +134,33 @@ document.getElementById("sapzForm").addEventListener("submit", async (e) => {
             alert("Erro ao salvar SAPZ: " + errorMsg);
         }
     } catch (err) {
+        console.error("Erro de conexão:", err);
         alert("Erro de conexão com o servidor.");
     }
-});
+}
 
+// Excluir SAPZ
 async function deletarSapz(id) {
     if (!confirm("Deseja realmente excluir esta SAPZ?")) return;
-    const token = localStorage.getItem("Authorization");
+    const authHeader = getAuthHeader();
+    if (!authHeader) return redirecionarParaLogin();
 
     try {
         const response = await fetch(`${API_URL}/situacoes-aprendizagem/${id}`, {
             method: "DELETE",
-            headers: { 
-                "Authorization": token.startsWith("Bearer ") ? token : `Bearer ${token}` 
-            }
+            headers: { "Authorization": authHeader }
         });
+
+        if (response.status === 401 || response.status === 403) {
+            redirecionarParaLogin();
+            return;
+        }
 
         if (response.ok || response.status === 204) {
             carregarSapzs();
         }
     } catch (err) {
+        console.error("Erro ao excluir:", err);
         alert("Erro ao excluir.");
     }
 }
-(async function protegerRota() {
-    const token = localStorage.getItem('Authorization') || localStorage.getItem('token');
-
-    // 1. Se não existir o token salvo, redireciona imediatamente
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    // 2. Valida o token com o backend para garantir que não expirou
-    try {
-        const response = await fetch('http://localhost:8080/user', { // Altere para a sua rota protegida
-            method: 'GET',
-            headers: {
-                'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`
-            }
-        });
-
-        // Se o backend retornar 401 (Unauthorized) ou 403 (Forbidden)
-        if (!response.ok) {
-            localStorage.removeItem('Authorization');
-            localStorage.removeItem('token');
-            window.location.href = 'login.html';
-        }
-    } catch (error) {
-        console.error('Erro na validação do login:', error);
-        localStorage.removeItem('Authorization');
-        localStorage.removeItem('token');
-        window.location.href = 'login.html';
-    }
-})();

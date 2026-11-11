@@ -1,4 +1,3 @@
-
 package tarefas02.api.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +18,7 @@ import tarefas02.api.services.exceptions.ObjectNotFoundException;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -73,17 +73,36 @@ public class UserService {
     public User create(User obj) {
         obj.setId(null);
 
+        // Padroniza o e-mail sem espaços e em letras minúsculas
+        if (obj.getEmail() != null) {
+            obj.setEmail(obj.getEmail().trim().toLowerCase());
+        }
+
         if (userRepository.existsByEmail(obj.getEmail())) {
             throw new DataBindingViolationException("Este e-mail já está cadastrado.");
         }
 
-        Perfil perfil = perfilRepository.findById(3L)
-                .orElseThrow(() -> new ObjectNotFoundException(
-                        "Perfil de instrutor não encontrado."));
+        // Atribui o perfil informado ou faz fallback seguro para ID 3L
+        Long perfilId = (obj.getPerfil() != null && obj.getPerfil().getId() != null) 
+                ? obj.getPerfil().getId() 
+                : 3L;
 
-        obj.setPerfil(perfil);
-        obj.setPassword(bCryptPasswordEncoder.encode(obj.getPassword()));
-        obj.getProfiles().clear();
+        Optional<Perfil> perfilOpt = perfilRepository.findById(perfilId);
+        if (perfilOpt.isPresent()) {
+            obj.setPerfil(perfilOpt.get());
+        } else {
+            perfilRepository.findById(3L).ifPresent(obj::setPerfil);
+        }
+
+        // Criptografa a senha com BCrypt
+        if (obj.getPassword() != null) {
+            obj.setPassword(bCryptPasswordEncoder.encode(obj.getPassword()));
+        }
+
+        // Evita NullPointerException ao manipular a coleção de perfis
+        if (obj.getProfiles() != null) {
+            obj.getProfiles().clear();
+        }
         obj.addProfile(ProfileEnum.INSTRUTOR);
 
         return userRepository.save(obj);
@@ -94,6 +113,13 @@ public class UserService {
         user.setNome(dto.getNome());
         user.setEmail(dto.getEmail());
         user.setPassword(dto.getPassword());
+        
+        if (dto.getPerfilId() != null) {
+            Perfil perfil = new Perfil();
+            perfil.setId(Long.valueOf(dto.getPerfilId()));
+            user.setPerfil(perfil);
+        }
+
         return user;
     }
 
@@ -101,7 +127,9 @@ public class UserService {
     public User update(User obj) {
         User user = findById(obj.getId());
 
-        user.setPassword(bCryptPasswordEncoder.encode(obj.getPassword()));
+        if (obj.getPassword() != null && !obj.getPassword().isEmpty()) {
+            user.setPassword(bCryptPasswordEncoder.encode(obj.getPassword()));
+        }
 
         return userRepository.save(user);
     }

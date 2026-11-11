@@ -1,54 +1,65 @@
 const API_URL = "http://localhost:8080";
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const alertDiv = document.getElementById("alert");
-
-    alertDiv.style.display = "none";
-
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
-        });
-
-        if (response.ok) {
-            const tokenHeader = response.headers.get("Authorization");
-            let token = tokenHeader;
-            try {
-                const body = await response.json();
-                if (body.token) token = body.token;
-            } catch (err) {}
-
-            localStorage.setItem("Authorization", token);
-            localStorage.setItem("user_email", email);
-            window.location.href = "index.html";
-        } else {
-            alertDiv.innerText = "E-mail ou senha inválidos.";
-            alertDiv.style.display = "block";
-        }
-    } catch (err) {
-        alertDiv.innerText = "Erro ao conectar com o servidor da API.";
-        alertDiv.style.display = "block";
-    }
-});
-
-// Exemplo no login.js após sucesso na requisição
-const response = await fetch('http://localhost:8080/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-});
-
-if (response.ok) {
-    // Obter o token do cabeçalho de resposta ou do corpo JSON
-    const token = response.headers.get('Authorization'); 
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById("loginForm");
     
-    if (token) {
-        localStorage.setItem('Authorization', token);
-        window.location.href = 'index.html';
+    if (!loginForm) return;
+
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const emailInput = document.getElementById("username") || document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const alertDiv = document.getElementById("alert");
+
+        if (alertDiv) alertDiv.style.display = "none";
+
+        const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+        const password = passwordInput ? passwordInput.value : "";
+
+        try {
+            const response = await fetch(`${API_URL}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    email: email, 
+                    password: password 
+                })
+            });
+
+            if (response.ok) {
+                let token = response.headers.get("Authorization");
+
+                if (!token) {
+                    const body = await response.json().catch(() => ({}));
+                    token = body.token || body.Authorization;
+                }
+
+                if (token) {
+                    const tokenLimpo = token.replace(/^Bearer\s+/i, '');
+                    localStorage.setItem("Authorization", tokenLimpo);
+                    localStorage.setItem("user_email", email);
+                    window.location.href = "index.html";
+                } else {
+                    exibirErro("O servidor não retornou o token de autenticação.");
+                }
+            } else {
+                exibirErro("E-mail ou senha inválidos.");
+            }
+        } catch (err) {
+            console.error("Erro na conexão:", err);
+            exibirErro("Erro ao conectar com o servidor da API.");
+        }
+    });
+});
+
+function exibirErro(mensagem) {
+    const alertDiv = document.getElementById("alert");
+    if (alertDiv) {
+        alertDiv.className = "alert alert-error";
+        alertDiv.innerText = mensagem;
+        alertDiv.style.display = "block";
+    } else {
+        alert(mensagem);
     }
 }

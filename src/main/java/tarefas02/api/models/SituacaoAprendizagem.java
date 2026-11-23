@@ -1,6 +1,9 @@
 package tarefas02.api.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -37,7 +40,9 @@ public class SituacaoAprendizagem {
 
     @Column(name = "resultados_esperados", nullable = false, columnDefinition = "TEXT")
     private String resultadosEsperados;
-
+    @NotNull(message = "A carga horária da SAPZ é obrigatória.")
+    @Min(value = 1, message = "A carga horária da SAPZ deve ser de no mínimo 1 hora.")
+    @Max(value = 408, message = "A carga horária da SAPZ não pode ultrapassar 408 horas.")
     @Column(name = "carga_horaria_sa", nullable = false)
     private Integer cargaHorariaSa;
 

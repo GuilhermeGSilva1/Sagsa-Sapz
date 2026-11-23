@@ -99,11 +99,18 @@ async function salvarSapz(e) {
     const authHeader = getAuthHeader();
     if (!authHeader) return redirecionarParaLogin();
 
+    const cargaHorariaSa = parseInt(document.getElementById("cargaHorariaSa").value, 10);
+
+    if (isNaN(cargaHorariaSa) || cargaHorariaSa < 1 || cargaHorariaSa > 408) {
+        alert("A carga horária máxima permitida para uma SAPZ é de 408 horas.");
+        return;
+    }
+
     const novaSapz = {
         titulo: document.getElementById("titulo").value,
         tipoEstrategia: document.getElementById("tipoEstrategia").value,
-        unidadeCurricular: { id: parseInt(document.getElementById("unidadeCurricularId").value) },
-        cargaHorariaSa: parseInt(document.getElementById("cargaHorariaSa").value),
+        unidadeCurricular: { id: parseInt(document.getElementById("unidadeCurricularId").value, 10) },
+        cargaHorariaSa: cargaHorariaSa,
         contextualizacao: document.getElementById("contextualizacao").value,
         desafio: document.getElementById("desafio").value,
         resultadosEsperados: document.getElementById("resultadosEsperados").value,
@@ -129,9 +136,12 @@ async function salvarSapz(e) {
             alert("SAPZ salva com sucesso!");
             document.getElementById("sapzForm").reset();
             carregarSapzs();
+        } else if (response.status >= 500) {
+            alert("Ops! Ocorreu uma falha interna no servidor ao salvar a SAPZ. Tente novamente.");
         } else {
-            const errorMsg = await response.text();
-            alert("Erro ao salvar SAPZ: " + errorMsg);
+            const errorData = await response.json().catch(() => null);
+            const mensagem = errorData?.errors?.[0]?.message || errorData?.message || "Não foi possível salvar a SAPZ. Verifique os campos.";
+            alert(mensagem);
         }
     } catch (err) {
         console.error("Erro de conexão:", err);

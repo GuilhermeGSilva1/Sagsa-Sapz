@@ -1,4 +1,16 @@
 const API_URL = "http://localhost:8080";
+let sapzsCarregadas = [];
+
+// Escapa caracteres HTML para evitar quebra de layout ou XSS
+function escapeHtml(texto) {
+    if (texto === null || texto === undefined) return "";
+    return String(texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
 // Auxiliar para recuperar o token formatado
 function getAuthHeader() {
@@ -48,6 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (sapzForm) {
         sapzForm.addEventListener("submit", salvarSapz);
     }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") fecharModalDescricao();
+    });
 });
 
 // Listar SAPZs da API
@@ -68,28 +84,71 @@ async function carregarSapzs() {
 
         if (response.ok) {
             const sapzs = await response.json();
+            sapzsCarregadas = sapzs;
             tbody.innerHTML = "";
 
             if (sapzs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma SAPZ cadastrada ainda.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhuma SAPZ cadastrada ainda.</td></tr>';
                 return;
             }
 
             sapzs.forEach(s => {
+                const descricaoResumo = s.contextualizacao || "Sem descrição";
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td>${s.id}</td>
-                    <td><strong>${s.titulo}</strong></td>
-                    <td><span class="badge">${s.tipoEstrategia}</span></td>
+                    <td><strong>${escapeHtml(s.titulo)}</strong></td>
+                    <td><div class="desc-preview" title="${escapeHtml(descricaoResumo)}">${escapeHtml(descricaoResumo)}</div></td>
+                    <td><span class="badge">${escapeHtml(s.tipoEstrategia)}</span></td>
                     <td>${s.cargaHorariaSa}h</td>
-                    <td><button onclick="deletarSapz(${s.id})" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Excluir</button></td>
+                    <td>
+                        <div class="acoes-cell">
+                            <button class="btn-ver" onclick="abrirModalDescricao(${s.id})">Ver Descrição</button>
+                            <button class="btn-excluir" onclick="deletarSapz(${s.id})">Excluir</button>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
     } catch (err) {
         console.error("Erro ao carregar SAPZs:", err);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
+    }
+}
+
+// Abrir modal com descrição completa da SAPZ
+function abrirModalDescricao(id) {
+    const sapz = sapzsCarregadas.find(item => item.id === id);
+    if (!sapz) return;
+
+    document.getElementById("modalTitulo").innerText = `#${sapz.id} - ${sapz.titulo}`;
+
+    const ucNome = sapz.unidadeCurricular?.nome || `ID ${sapz.unidadeCurricular?.id ?? "-"}`;
+    const instrutorNome = sapz.instrutor?.nome || sapz.instrutor?.email || "-";
+
+    document.getElementById("modalMeta").innerHTML = `
+        <span><strong>Estratégia:</strong> ${escapeHtml(sapz.tipoEstrategia)}</span>
+        <span><strong>Carga Horária:</strong> ${sapz.cargaHorariaSa}h</span>
+        <span><strong>Unidade Curricular:</strong> ${escapeHtml(ucNome)}</span>
+        <span><strong>Instrutor:</strong> ${escapeHtml(instrutorNome)}</span>
+    `;
+
+    document.getElementById("modalContextualizacao").innerText = sapz.contextualizacao || "Não informada.";
+    document.getElementById("modalDesafio").innerText = sapz.desafio || "Não informado.";
+    document.getElementById("modalResultados").innerText = sapz.resultadosEsperados || "Não informados.";
+
+    document.getElementById("modalDescricao").classList.add("ativo");
+}
+
+function fecharModalDescricao() {
+    const modal = document.getElementById("modalDescricao");
+    if (modal) modal.classList.remove("ativo");
+}
+
+function fecharModalSeClicarFora(event) {
+    if (event.target.id === "modalDescricao") {
+        fecharModalDescricao();
     }
 }
 

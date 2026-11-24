@@ -1,7 +1,7 @@
 const API_URL = "http://localhost:8080";
 let sapzsCarregadas = [];
+let unidadesCurricularesCarregadas = [];
 
-// Escapa caracteres HTML para evitar quebra de layout ou XSS
 function escapeHtml(texto) {
     if (texto === null || texto === undefined) return "";
     return String(texto)
@@ -12,21 +12,18 @@ function escapeHtml(texto) {
         .replace(/'/g, "&#039;");
 }
 
-// Auxiliar para recuperar o token formatado
 function getAuthHeader() {
     const token = localStorage.getItem("Authorization");
     if (!token || token === "null" || token === "undefined") return null;
     return token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 }
 
-// Redireciona para o login limpando dados inválidos
 function redirecionarParaLogin() {
     localStorage.removeItem("Authorization");
     localStorage.removeItem("user_email");
     window.location.href = "login.html";
 }
 
-// Validação de autenticação local
 function verificarAutenticacao() {
     const authHeader = getAuthHeader();
     const email = localStorage.getItem("user_email");
@@ -44,16 +41,15 @@ function verificarAutenticacao() {
     return true;
 }
 
-// Logout manual
 function logout() {
     localStorage.clear();
     window.location.href = "login.html";
 }
 
-// Inicialização da página
 document.addEventListener("DOMContentLoaded", () => {
     if (!verificarAutenticacao()) return;
 
+    carregarUnidadesCurriculares();
     carregarSapzs();
 
     const sapzForm = document.getElementById("sapzForm");
@@ -65,6 +61,46 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Escape") fecharModalDescricao();
     });
 });
+
+// Carrega Unidades Curriculares para o campo digitável + datalist
+async function carregarUnidadesCurriculares() {
+    const authHeader = getAuthHeader();
+    const datalist = document.getElementById("unidadesCurricularesList");
+    const input = document.getElementById("unidadeCurricularInput");
+    const hiddenId = document.getElementById("unidadeCurricularId");
+    if (!datalist || !input || !authHeader) return;
+
+    try {
+        const response = await fetch(`${API_URL}/unidades-curriculares`, {
+            headers: { "Authorization": authHeader }
+        });
+
+        if (response.ok) {
+            unidadesCurricularesCarregadas = await response.json();
+            datalist.innerHTML = unidadesCurricularesCarregadas.map(uc =>
+                `<option value="${escapeHtml(uc.nome)} (${uc.cargaHoraria}h)" data-id="${uc.id}"></option>`
+            ).join("");
+
+            if (unidadesCurricularesCarregadas.length > 0 && !input.value) {
+                const primeira = unidadesCurricularesCarregadas[0];
+                input.value = `${primeira.nome} (${primeira.cargaHoraria}h)`;
+                if (hiddenId) hiddenId.value = primeira.id;
+            }
+        }
+    } catch (err) {
+        console.error("Erro ao carregar Unidades Curriculares:", err);
+    }
+
+    input.addEventListener("input", () => {
+        const match = unidadesCurricularesCarregadas.find(uc =>
+            `${uc.nome} (${uc.cargaHoraria}h)`.toLowerCase() === input.value.trim().toLowerCase() ||
+            uc.nome.toLowerCase() === input.value.trim().toLowerCase()
+        );
+        if (hiddenId) {
+            hiddenId.value = match ? match.id : "";
+        }
+    });
+}
 
 // Listar SAPZs da API
 async function carregarSapzs() {
@@ -83,33 +119,8 @@ async function carregarSapzs() {
         }
 
         if (response.ok) {
-            const sapzs = await response.json();
-            sapzsCarregadas = sapzs;
-            tbody.innerHTML = "";
-
-            if (sapzs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhuma SAPZ cadastrada ainda.</td></tr>';
-                return;
-            }
-
-            sapzs.forEach(s => {
-                const descricaoResumo = s.contextualizacao || "Sem descrição";
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${s.id}</td>
-                    <td><strong>${escapeHtml(s.titulo)}</strong></td>
-                    <td><div class="desc-preview" title="${escapeHtml(descricaoResumo)}">${escapeHtml(descricaoResumo)}</div></td>
-                    <td><span class="badge">${escapeHtml(s.tipoEstrategia)}</span></td>
-                    <td>${s.cargaHorariaSa}h</td>
-                    <td>
-                        <div class="acoes-cell">
-                            <button class="btn-ver" onclick="abrirModalDescricao(${s.id})">Ver Descrição</button>
-                            <button class="btn-excluir" onclick="deletarSapz(${s.id})">Excluir</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+            sapzsCarregadas = await response.json();
+            renderizarTabela();
         }
     } catch (err) {
         console.error("Erro ao carregar SAPZs:", err);
@@ -117,7 +128,91 @@ async function carregarSapzs() {
     }
 }
 
-// Abrir modal com descrição completa da SAPZ
+function renderizarTabela() {
+    const tbody = document.getElementById("sapzTableBody");
+    if (!tbody) return;
+
+    const termoBusca = (document.getElementById("buscaTitulo")?.value || "").trim().toLowerCase();
+    const estrategiaFiltro = document.getElementById("filtroEstrategia")?.value || "";
+
+    const filtradas = sapzsCarregadas.filter(s => {
+        const matchEstrategia = !estrategiaFiltro || s.tipoEstrategia === estrategiaFiltro;
+        const matchTexto = !termoBusca ||
+            (s.titulo && s.titulo.toLowerCase().includes(termoBusca)) ||
+            (s.contextualizacao && s.contextualizacao.toLowerCase().includes(termoBusca));
+        return matchEstrategia && matchTexto;
+    });
+
+    tbody.innerHTML = "";
+
+    if (filtradas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhuma SAPZ encontrada.</td></tr>';
+        return;
+    }
+
+    filtradas.forEach(s => {
+        const descricaoResumo = s.contextualizacao || "Sem descrição";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${s.id}</td>
+            <td><strong>${escapeHtml(s.titulo)}</strong></td>
+            <td><div class="desc-preview" title="${escapeHtml(descricaoResumo)}">${escapeHtml(descricaoResumo)}</div></td>
+            <td><span class="badge">${escapeHtml(s.tipoEstrategia)}</span></td>
+            <td>${s.cargaHorariaSa}h</td>
+            <td>
+                <div class="acoes-cell">
+                    <button class="btn-ver" onclick="abrirModalDescricao(${s.id})">Ver Descrição</button>
+                    <button class="btn-editar" onclick="prepararEdicao(${s.id})">Editar</button>
+                    <button class="btn-excluir" onclick="deletarSapz(${s.id})">Excluir</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function prepararEdicao(id) {
+    const sapz = sapzsCarregadas.find(item => item.id === id);
+    if (!sapz) return;
+
+    document.getElementById("sapzId").value = sapz.id;
+    document.getElementById("titulo").value = sapz.titulo || "";
+    document.getElementById("tipoEstrategia").value = sapz.tipoEstrategia || "SITUACAO_PROBLEMA";
+
+    const ucObj = unidadesCurricularesCarregadas.find(uc => uc.id === sapz.unidadeCurricular?.id) || sapz.unidadeCurricular;
+    if (ucObj) {
+        document.getElementById("unidadeCurricularId").value = ucObj.id;
+        document.getElementById("unidadeCurricularInput").value = ucObj.cargaHoraria
+            ? `${ucObj.nome} (${ucObj.cargaHoraria}h)`
+            : (ucObj.nome || "");
+    }
+
+    document.getElementById("cargaHorariaSa").value = sapz.cargaHorariaSa ?? 20;
+    document.getElementById("contextualizacao").value = sapz.contextualizacao || "";
+    document.getElementById("desafio").value = sapz.desafio || "";
+    document.getElementById("resultadosEsperados").value = sapz.resultadosEsperados || "";
+
+    document.getElementById("formTitulo").innerText = `Editando SAPZ #${sapz.id}`;
+    document.getElementById("btnSubmitSapz").innerText = "Atualizar SAPZ";
+    document.getElementById("btnCancelarEdicao").style.display = "inline-block";
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function cancelarEdicao() {
+    document.getElementById("sapzForm").reset();
+    document.getElementById("sapzId").value = "";
+    document.getElementById("formTitulo").innerText = "Nova Situação de Aprendizagem (SAPZ)";
+    document.getElementById("btnSubmitSapz").innerText = "Salvar SAPZ";
+    document.getElementById("btnCancelarEdicao").style.display = "none";
+
+    if (unidadesCurricularesCarregadas.length > 0) {
+        const primeira = unidadesCurricularesCarregadas[0];
+        document.getElementById("unidadeCurricularInput").value = `${primeira.nome} (${primeira.cargaHoraria}h)`;
+        document.getElementById("unidadeCurricularId").value = primeira.id;
+    }
+}
+
 function abrirModalDescricao(id) {
     const sapz = sapzsCarregadas.find(item => item.id === id);
     if (!sapz) return;
@@ -152,23 +247,39 @@ function fecharModalSeClicarFora(event) {
     }
 }
 
-// Salvar SAPZ
+// Criar ou Atualizar SAPZ
 async function salvarSapz(e) {
     e.preventDefault();
     const authHeader = getAuthHeader();
     if (!authHeader) return redirecionarParaLogin();
 
+    const sapzId = document.getElementById("sapzId").value;
     const cargaHorariaSa = parseInt(document.getElementById("cargaHorariaSa").value, 10);
 
     if (isNaN(cargaHorariaSa) || cargaHorariaSa < 1 || cargaHorariaSa > 408) {
-        alert("A carga horária máxima permitida para uma SAPZ é de 408 horas.");
+        alert("A carga horária permitida para uma SAPZ é de 1 a 408 horas.");
         return;
     }
 
-    const novaSapz = {
+    const ucInputValor = (document.getElementById("unidadeCurricularInput")?.value || "").trim().toLowerCase();
+    const ucEncontrada = unidadesCurricularesCarregadas.find(uc =>
+        `${uc.nome} (${uc.cargaHoraria}h)`.toLowerCase() === ucInputValor ||
+        uc.nome.toLowerCase() === ucInputValor ||
+        String(uc.id) === ucInputValor
+    );
+    const unidadeCurricularId = ucEncontrada
+        ? ucEncontrada.id
+        : parseInt(document.getElementById("unidadeCurricularId").value, 10);
+
+    if (!unidadeCurricularId || isNaN(unidadeCurricularId)) {
+        alert("Selecione ou digite uma Unidade Curricular válida.");
+        return;
+    }
+
+    const payload = {
         titulo: document.getElementById("titulo").value,
         tipoEstrategia: document.getElementById("tipoEstrategia").value,
-        unidadeCurricular: { id: parseInt(document.getElementById("unidadeCurricularId").value, 10) },
+        unidadeCurricular: { id: unidadeCurricularId },
         cargaHorariaSa: cargaHorariaSa,
         contextualizacao: document.getElementById("contextualizacao").value,
         desafio: document.getElementById("desafio").value,
@@ -176,14 +287,20 @@ async function salvarSapz(e) {
         compartilhada: false
     };
 
+    const isEdicao = Boolean(sapzId);
+    const url = isEdicao
+        ? `${API_URL}/situacoes-aprendizagem/${sapzId}`
+        : `${API_URL}/situacoes-aprendizagem`;
+    const method = isEdicao ? "PUT" : "POST";
+
     try {
-        const response = await fetch(`${API_URL}/situacoes-aprendizagem`, {
-            method: "POST",
+        const response = await fetch(url, {
+            method,
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": authHeader
             },
-            body: JSON.stringify(novaSapz)
+            body: JSON.stringify(payload)
         });
 
         if (response.status === 401 || response.status === 403) {
@@ -192,11 +309,11 @@ async function salvarSapz(e) {
         }
 
         if (response.ok || response.status === 201) {
-            alert("SAPZ salva com sucesso!");
-            document.getElementById("sapzForm").reset();
+            alert(isEdicao ? "SAPZ atualizada com sucesso!" : "SAPZ salva com sucesso!");
+            cancelarEdicao();
             carregarSapzs();
         } else if (response.status >= 500) {
-            alert("Ops! Ocorreu uma falha interna no servidor ao salvar a SAPZ. Tente novamente.");
+            alert("Ops! Ocorreu uma falha interna no servidor ao salvar a SAPZ.");
         } else {
             const errorData = await response.json().catch(() => null);
             const mensagem = errorData?.errors?.[0]?.message || errorData?.message || "Não foi possível salvar a SAPZ. Verifique os campos.";
@@ -226,6 +343,9 @@ async function deletarSapz(id) {
         }
 
         if (response.ok || response.status === 204) {
+            if (document.getElementById("sapzId").value === String(id)) {
+                cancelarEdicao();
+            }
             carregarSapzs();
         }
     } catch (err) {

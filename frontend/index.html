@@ -11,7 +11,7 @@
         header h1 { margin: 0; font-size: 20px; }
         .user-info { display: flex; align-items: center; gap: 15px; }
         .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .container { max-width: 1150px; margin: 30px auto; padding: 0 20px; }
         .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
         h2 { color: #004085; margin-top: 0; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -20,19 +20,24 @@
         label { display: block; font-weight: 600; margin-bottom: 5px; color: #495057; }
         input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px; }
         textarea { height: 80px; resize: vertical; }
+        .form-actions { display: flex; gap: 10px; align-items: center; }
         .btn-primary { background: #0056b3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .btn-primary:hover { background: #004085; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .filtros-bar { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .filtros-bar input { flex: 2; min-width: 220px; }
+        .filtros-bar select { flex: 1; min-width: 180px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #dee2e6; vertical-align: middle; }
         th { background: #e9ecef; color: #495057; }
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #17a2b8; color: white; white-space: nowrap; }
-        .desc-preview { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #495057; }
+        .desc-preview { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #495057; }
         .acoes-cell { display: flex; gap: 6px; white-space: nowrap; }
         .btn-ver { background: #0056b3; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-        .btn-ver:hover { background: #004085; }
+        .btn-editar { background: #ffc107; color: #212529; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; }
         .btn-excluir { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-        .btn-excluir:hover { background: #b02a37; }
 
-        /* Modal de Descrição */
+        /* Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -63,14 +68,7 @@
             margin-bottom: 16px;
         }
         .modal-header h3 { margin: 0; color: #004085; font-size: 19px; }
-        .modal-close {
-            background: transparent;
-            border: none;
-            font-size: 24px;
-            line-height: 1;
-            cursor: pointer;
-            color: #6c757d;
-        }
+        .modal-close { background: transparent; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
         .modal-meta {
             display: flex;
             flex-wrap: wrap;
@@ -107,10 +105,11 @@
     </header>
 
     <div class="container">
-        <!-- Cadastrar Nova SAPZ -->
+        <!-- Cadastrar / Editar SAPZ -->
         <div class="card">
-            <h2>Nova Situação de Aprendizagem (SAPZ)</h2>
+            <h2 id="formTitulo">Nova Situação de Aprendizagem (SAPZ)</h2>
             <form id="sapzForm">
+                <input type="hidden" id="sapzId">
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="titulo">Título da SAPZ</label>
@@ -126,8 +125,10 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="unidadeCurricularId">ID Unidade Curricular</label>
-                        <input type="number" id="unidadeCurricularId" required value="1">
+                        <label for="unidadeCurricularInput">Unidade Curricular</label>
+                        <input type="text" id="unidadeCurricularInput" list="unidadesCurricularesList" required placeholder="Digite ou escolha uma unidade curricular...">
+                        <datalist id="unidadesCurricularesList"></datalist>
+                        <input type="hidden" id="unidadeCurricularId" value="1">
                     </div>
                     <div class="form-group">
                         <label for="cargaHorariaSa">Carga Horária (horas - máx. 408h)</label>
@@ -146,13 +147,26 @@
                         <textarea id="resultadosEsperados" required placeholder="Entregáveis solicitados..."></textarea>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary">Salvar SAPZ</button>
+                <div class="form-actions">
+                    <button type="submit" id="btnSubmitSapz" class="btn-primary">Salvar SAPZ</button>
+                    <button type="button" id="btnCancelarEdicao" class="btn-secondary" style="display:none;" onclick="cancelarEdicao()">Cancelar Edição</button>
+                </div>
             </form>
         </div>
 
         <!-- Lista de SAPZs -->
         <div class="card">
             <h2>Situações de Aprendizagem Cadastradas</h2>
+            <div class="filtros-bar">
+                <input type="text" id="buscaTitulo" placeholder="Buscar por título ou descrição..." oninput="renderizarTabela()">
+                <select id="filtroEstrategia" onchange="renderizarTabela()">
+                    <option value="">Todas as estratégias</option>
+                    <option value="SITUACAO_PROBLEMA">Situação Problema</option>
+                    <option value="ESTUDO_CASO">Estudo de Caso</option>
+                    <option value="PROJETO">Projeto</option>
+                    <option value="PESQUISA_APLICADA">Pesquisa Aplicada</option>
+                </select>
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -171,7 +185,7 @@
         </div>
     </div>
 
-    <!-- Modal para visualizar descrição completa da SAPZ -->
+    <!-- Modal de Descrição Completa -->
     <div id="modalDescricao" class="modal-overlay" onclick="fecharModalSeClicarFora(event)">
         <div class="modal-content">
             <div class="modal-header">

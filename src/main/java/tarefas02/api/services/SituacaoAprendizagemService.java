@@ -48,12 +48,42 @@ public class SituacaoAprendizagemService {
             sa.setInstrutor(instrutorPadrao);
         }
 
-        Long ucId = (sa.getUnidadeCurricular() != null) ? sa.getUnidadeCurricular().getId() : 1L;
+        Long ucId = (sa.getUnidadeCurricular() != null && sa.getUnidadeCurricular().getId() != null)
+                ? sa.getUnidadeCurricular().getId()
+                : 1L;
         UnidadeCurricular uc = unidadeCurricularRepository.findById(ucId)
                 .orElseThrow(() -> new ObjectNotFoundException("Unidade Curricular não encontrada com ID: " + ucId));
         sa.setUnidadeCurricular(uc);
 
+        if (sa.getCompartilhada() == null) {
+            sa.setCompartilhada(false);
+        }
+
         return repository.save(sa);
+    }
+
+    public SituacaoAprendizagem update(Long id, SituacaoAprendizagem saAtualizada) {
+        SituacaoAprendizagem existente = findById(id);
+
+        existente.setTitulo(saAtualizada.getTitulo());
+        existente.setTipoEstrategia(saAtualizada.getTipoEstrategia());
+        existente.setCargaHorariaSa(saAtualizada.getCargaHorariaSa());
+        existente.setContextualizacao(saAtualizada.getContextualizacao());
+        existente.setDesafio(saAtualizada.getDesafio());
+        existente.setResultadosEsperados(saAtualizada.getResultadosEsperados());
+
+        if (saAtualizada.getCompartilhada() != null) {
+            existente.setCompartilhada(saAtualizada.getCompartilhada());
+        }
+
+        if (saAtualizada.getUnidadeCurricular() != null && saAtualizada.getUnidadeCurricular().getId() != null) {
+            UnidadeCurricular uc = unidadeCurricularRepository.findById(saAtualizada.getUnidadeCurricular().getId())
+                    .orElseThrow(() -> new ObjectNotFoundException(
+                            "Unidade Curricular não encontrada com ID: " + saAtualizada.getUnidadeCurricular().getId()));
+            existente.setUnidadeCurricular(uc);
+        }
+
+        return repository.save(existente);
     }
 
     public void delete(Long id) {

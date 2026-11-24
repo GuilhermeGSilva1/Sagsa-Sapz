@@ -1,5 +1,6 @@
 package tarefas02.api.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,11 +29,17 @@ public class SituacaoAprendizagemController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> create(@RequestBody SituacaoAprendizagem sa) {
+    public ResponseEntity<Void> create(@Valid @RequestBody SituacaoAprendizagem sa) {
         SituacaoAprendizagem newObj = service.create(sa);
         URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}").buildAndExpand(newObj.getId()).toUri();
         return ResponseEntity.created(uri).build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SituacaoAprendizagem> update(@PathVariable Long id, @Valid @RequestBody SituacaoAprendizagem sa) {
+        SituacaoAprendizagem updated = service.update(id, sa);
+        return ResponseEntity.ok().body(updated);
     }
 
     @DeleteMapping("/{id}")

@@ -5,53 +5,284 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAGSA - Criar Conta</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { margin-top: 0; color: #004085; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #1e7e34; }
-        .footer-text { text-align: center; margin-top: 15px; font-size: 14px; }
-        .footer-text a { color: #0056b3; text-decoration: none; }
-        .alert { padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; }
-        .alert-error { background: #f8d7da; color: #721c24; }
-        .alert-success { background: #d4edda; color: #155724; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #e9eff6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            color: #1e293b;
+        }
+
+        .signup-wrapper {
+            width: 100%;
+            max-width: 960px;
+            min-height: 560px;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            box-shadow: 0 20px 50px rgba(0, 64, 133, 0.14);
+            border: 1px solid #dbe6f3;
+        }
+
+        .signup-left {
+            padding: 40px 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+            z-index: 2;
+        }
+
+        .signup-title {
+            margin: 0 0 22px 0;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #004085;
+        }
+
+        .signup-title .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0056b3;
+            margin-left: 3px;
+            vertical-align: baseline;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            background: #f8fbff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        input:focus,
+        select:focus {
+            background: #ffffff;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
+        }
+
+        .btn-signup {
+            width: 100%;
+            margin-top: 6px;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #004085 0%, #0056b3 55%, #1976d2 100%);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .btn-signup:hover {
+            opacity: 0.94;
+        }
+
+        .btn-signup:active {
+            transform: scale(0.99);
+        }
+
+        .login-row {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .login-row a {
+            color: #0056b3;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .login-row a:hover {
+            color: #004085;
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+
+        .signup-right {
+            position: relative;
+            background:
+                radial-gradient(circle at 72% 26%, rgba(255, 255, 255, 0.22), transparent 45%),
+                radial-gradient(circle at 28% 72%, rgba(147, 197, 253, 0.25), transparent 55%),
+                linear-gradient(160deg, #002b5c 0%, #004085 52%, #0066cc 100%);
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .signup-right::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.65) 18%, rgba(255, 255, 255, 0.05) 55%, transparent 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .stars {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(1.5px 1.5px at 18% 16%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 34% 24%, rgba(255, 255, 255, 0.75), transparent),
+                radial-gradient(2px 2px at 52% 14%, rgba(255, 255, 255, 0.95), transparent),
+                radial-gradient(1px 1px at 68% 22%, rgba(255, 255, 255, 0.8), transparent),
+                radial-gradient(1.5px 1.5px at 82% 12%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 88% 34%, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(1.5px 1.5px at 61% 38%, rgba(255, 255, 255, 0.85), transparent),
+                radial-gradient(1px 1px at 44% 42%, rgba(255, 255, 255, 0.65), transparent),
+                radial-gradient(1px 1px at 76% 48%, rgba(255, 255, 255, 0.65), transparent),
+                radial-gradient(1.5px 1.5px at 26% 46%, rgba(255, 255, 255, 0.75), transparent);
+            z-index: 1;
+        }
+
+        .mountain-back {
+            position: absolute;
+            bottom: 0;
+            left: -5%;
+            width: 110%;
+            height: 44%;
+            background: #1d5fa7;
+            clip-path: polygon(0% 100%, 14% 58%, 29% 76%, 48% 38%, 67% 68%, 84% 46%, 100% 78%, 100% 100%);
+            opacity: 0.85;
+            z-index: 1;
+        }
+
+        .mountain-front {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 33%;
+            background: #002b5c;
+            clip-path: polygon(0% 100%, 18% 66%, 38% 82%, 62% 44%, 82% 72%, 100% 56%, 100% 100%);
+            z-index: 1;
+        }
+
+        @media (max-width: 780px) {
+            .signup-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 440px;
+                min-height: auto;
+            }
+
+            .signup-right {
+                display: none;
+            }
+
+            .signup-left {
+                padding: 36px 28px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Criar Conta - SAGSA</h2>
-        <div id="alert" class="alert"></div>
-        <form id="signupForm">
-            <div class="form-group">
-                <label for="nome">Nome Completo</label>
-                <input type="text" id="nome" required placeholder="João da Silva">
+    <div class="signup-wrapper">
+        <div class="signup-left">
+            <h1 class="signup-title">Criar Conta - SAGSA<span class="dot"></span></h1>
+
+            <div id="alert" class="alert"></div>
+
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" required placeholder="João da Silva" autocomplete="name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" required placeholder="joao@senai.br" autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required minlength="6" placeholder="******" autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label for="perfilId">Perfil</label>
+                    <select id="perfilId" required>
+                        <option value="1">ADMINISTRADOR</option>
+                        <option value="2">COORDENADOR</option>
+                        <option value="3" selected>INSTRUTOR</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-signup">Cadastrar</button>
+            </form>
+
+            <div class="login-row">
+                Já possui cadastro? <a href="login.html">Faça Login</a>
             </div>
-            <div class="form-group">
-                <label for="email">E-mail</label>
-                <input type="email" id="email" required placeholder="joao@senai.br">
-            </div>
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" id="password" required placeholder="******">
-            </div>
-            <div class="form-group">
-                <label for="perfilId">Perfil</label>
-                <select id="perfilId" required>
-                    <option value="1">ADMINISTRADOR</option>
-                    <option value="2">COORDENADOR</option>
-                    <option value="3" selected>INSTRUTOR</option>
-                </select>
-            </div>
-            <button type="submit">Cadastrar</button>
-        </form>
-        <div class="footer-text">
-            Já possui cadastro? <a href="login.html">Faça Login</a>
+        </div>
+
+        <div class="signup-right" aria-hidden="true">
+            <div class="stars"></div>
+            <div class="mountain-back"></div>
+            <div class="mountain-front"></div>
         </div>
     </div>
+
     <script src="scripts/signup.js"></script>
 </body>
 </html>

@@ -3,41 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAGSA - Entrar</title>
+    <title>SAGSA - Faça seu login</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { margin-top: 0; color: #004085; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #003d80; }
-        .footer-text { text-align: center; margin-top: 15px; font-size: 14px; }
-        .footer-text a { color: #0056b3; text-decoration: none; }
-        .alert { padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px; margin-bottom: 15px; display: none; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #e9eff6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            color: #1e293b;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 920px;
+            min-height: 500px;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1.05fr;
+            box-shadow: 0 20px 50px rgba(0, 64, 133, 0.14);
+            border: 1px solid #dbe6f3;
+        }
+
+        .login-left {
+            padding: 48px 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+            z-index: 2;
+        }
+
+        .login-title {
+            margin: 0 0 28px 0;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #004085;
+        }
+
+        .login-title .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0056b3;
+            margin-left: 3px;
+            vertical-align: baseline;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e3a5f;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 15px;
+            background: #f8fbff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        input:focus {
+            background: #ffffff;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.15);
+        }
+
+        .forgot-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: -6px;
+            margin-bottom: 22px;
+        }
+
+        .forgot-link {
+            font-size: 12px;
+            color: #0056b3;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: #004085;
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #004085 0%, #0056b3 55%, #1976d2 100%);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .btn-login:hover {
+            opacity: 0.94;
+        }
+
+        .btn-login:active {
+            transform: scale(0.99);
+        }
+
+        .signup-row {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .signup-row a {
+            color: #0056b3;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .signup-row a:hover {
+            color: #004085;
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .alert-info {
+            background: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            color: #075985;
+        }
+
+        .login-right {
+            position: relative;
+            background:
+                radial-gradient(circle at 72% 26%, rgba(255, 255, 255, 0.22), transparent 45%),
+                radial-gradient(circle at 28% 72%, rgba(147, 197, 253, 0.25), transparent 55%),
+                linear-gradient(160deg, #002b5c 0%, #004085 52%, #0066cc 100%);
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .login-right::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.65) 18%, rgba(255, 255, 255, 0.05) 55%, transparent 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .stars {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(1.5px 1.5px at 18% 16%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 34% 24%, rgba(255, 255, 255, 0.75), transparent),
+                radial-gradient(2px 2px at 52% 14%, rgba(255, 255, 255, 0.95), transparent),
+                radial-gradient(1px 1px at 68% 22%, rgba(255, 255, 255, 0.8), transparent),
+                radial-gradient(1.5px 1.5px at 82% 12%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 88% 34%, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(1.5px 1.5px at 61% 38%, rgba(255, 255, 255, 0.85), transparent),
+                radial-gradient(1px 1px at 44% 42%, rgba(255, 255, 255, 0.65), transparent),
+                radial-gradient(1px 1px at 76% 48%, rgba(255, 255, 255, 0.65), transparent),
+                radial-gradient(1.5px 1.5px at 26% 46%, rgba(255, 255, 255, 0.75), transparent);
+            z-index: 1;
+        }
+
+        .mountain-back {
+            position: absolute;
+            bottom: 0;
+            left: -5%;
+            width: 110%;
+            height: 44%;
+            background: #1d5fa7;
+            clip-path: polygon(0% 100%, 14% 58%, 29% 76%, 48% 38%, 67% 68%, 84% 46%, 100% 78%, 100% 100%);
+            opacity: 0.85;
+            z-index: 1;
+        }
+
+        .mountain-front {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 33%;
+            background: #002b5c;
+            clip-path: polygon(0% 100%, 18% 66%, 38% 82%, 62% 44%, 82% 72%, 100% 56%, 100% 100%);
+            z-index: 1;
+        }
+
+        @media (max-width: 780px) {
+            .login-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 440px;
+                min-height: auto;
+            }
+
+            .login-right {
+                display: none;
+            }
+
+            .login-left {
+                padding: 36px 28px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>SAGSA - Entrar</h2>
-        <div id="alert" class="alert"></div>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">E-mail</label>
-                <input type="email" id="username" required placeholder="seu.email@senai.br">
+    <div class="login-wrapper">
+        <div class="login-left">
+            <h1 class="login-title">Faça seu login<span class="dot"></span></h1>
+
+            <div id="alert" class="alert"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">E-mail</label>
+                    <input type="email" id="username" required placeholder="E-mail" autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Senha" autocomplete="current-password">
+                </div>
+
+                <div class="forgot-row">
+                    <a href="#" class="forgot-link" onclick="handleEsqueciSenha(event)">Esqueci minha Senha</a>
+                </div>
+
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <div class="signup-row">
+                <a href="signup.html">Ainda não tem uma conta?</a>
             </div>
-            <div class="form-group">
-                <label for="password">Senha</label>
-                <input type="password" id="password" required placeholder="******">
-            </div>
-            <button type="submit">Entrar</button>
-        </form>
-        <div class="footer-text">
-            Não tem uma conta? <a href="signup.html">Cadastre-se</a>
+        </div>
+
+        <div class="login-right" aria-hidden="true">
+            <div class="stars"></div>
+            <div class="mountain-back"></div>
+            <div class="mountain-front"></div>
         </div>
     </div>
+
     <script src="scripts/login.js"></script>
 </body>
 </html>
